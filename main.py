@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog
-from PIL import Image, ImageTk, ImageFilter
+from PIL import Image, ImageTk
 import cv2
 import numpy as np
+import os
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -19,14 +20,17 @@ globals()["scale_factor"] = 1
 # kernel_radius_default = 9
 
 # blue part
-low_red_default = [150, 5, 5]
+low_red_default = [164, 5, 5]
 upper_red_default = [180, 255, 255]
 
 low_blue_default = [100, 2, 50]
-upper_blue_default = [180, 255, 255]
+upper_blue_default = [165, 255, 255]
 
 median_range = 39
-kernel_radius_default = 17
+kernel_radius_default = 31
+
+chunk_size = 10000
+overlay_size = 1024
 
 
 def upload_image():
@@ -68,7 +72,6 @@ def apply_filters(image, lower_red=None, lower_blue=None, kernel_radius_=kernel_
 
     mask_not_red = cv2.bitwise_not(mask_red)
     mask_blue_not_red = cv2.bitwise_and(mask_blue, mask_not_red)
-    # mask_combine = cv2.bitwise_or(mask_red, mask_blue)
 
     mask_final = mask_blue_not_red
 
@@ -82,27 +85,32 @@ def apply_filters(image, lower_red=None, lower_blue=None, kernel_radius_=kernel_
 
 
 def apply_changes():
-    lower_red = [int(entry_lower_red_hue.get()), int(entry_lower_red_saturation.get()), int(entry_lower_red_value.get())]
-    lower_blue = [int(entry_lower_blue_hue.get()), int(entry_lower_blue_saturation.get()), int(entry_lower_blue_value.get())]
+    lower_red = [int(entry_lower_red_hue.get()), int(entry_lower_red_saturation.get()),
+                 int(entry_lower_red_value.get())]
+    lower_blue = [int(entry_lower_blue_hue.get()), int(entry_lower_blue_saturation.get()),
+                  int(entry_lower_blue_value.get())]
     median_range_ = int(entry_median_range.get())
     if median_range_ % 2 == 1:
         median_range_ += 1
     kernel_radius_ = int(entry_kernel_radius.get())
     globals()["scale_factor"] = scale.get() / 100
     if 'img_original' in globals():
-        apply_filters(image=globals()['img_original_backup'].copy(), lower_red=lower_red, lower_blue=lower_blue, kernel_radius_=kernel_radius_)
+        apply_filters(image=globals()['img_original_backup'].copy(), lower_red=lower_red, lower_blue=lower_blue,
+                      kernel_radius_=kernel_radius_)
         update_previews()
 
 
 def update_previews():
     if 'img_original' in globals():
         img_original_thumbnail = globals()['img_original']
-        img_original_thumbnail.thumbnail((600 * globals()["scale_factor"], 600 * globals()["scale_factor"]), Image.Resampling.LANCZOS)
+        img_original_thumbnail.thumbnail((600 * globals()["scale_factor"], 600 * globals()["scale_factor"]),
+                                         Image.Resampling.LANCZOS)
         update_preview(img_label_original, img_original_thumbnail)
 
     if 'img_filtered' in globals():
         img_filtered_thumbnail = globals()['img_filtered']
-        img_filtered_thumbnail.thumbnail((600 * globals()["scale_factor"], 600 * globals()["scale_factor"]), Image.Resampling.LANCZOS)
+        img_filtered_thumbnail.thumbnail((600 * globals()["scale_factor"], 600 * globals()["scale_factor"]),
+                                         Image.Resampling.LANCZOS)
         update_preview(img_label_processed, img_filtered_thumbnail)
 
 
@@ -125,6 +133,28 @@ def mapping():
     apply_changes()
 
 
+def split_image():
+    file_path = filedialog.askopenfilename()
+    if file_path:
+        image = Image.open(file_path)
+        _overlap_size = overlay_size  # Overlap between chunks
+        _chunk_size = chunk_size  # Size of each chunk
+        output_folder = filedialog.askdirectory()
+
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+
+        width, height = image.size
+        count = 0
+
+        for i in range(0, width, _chunk_size - _overlap_size):
+            for j in range(0, height, _chunk_size - _overlap_size):
+                box = (i, j, i + _chunk_size, j + _chunk_size)
+                chunk = image.crop(box)
+                chunk.save(os.path.join(output_folder, f'chunk_{count}.png'))
+                count += 1
+
+
 # Create main window
 root = tk.Tk()
 root.title("Image Processing")
@@ -143,7 +173,10 @@ img_label_processed = tk.Label(img_frame)
 img_label_processed.image = None
 img_label_processed.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
-# Button
+# Buttons
+split_image_btn = tk.Button(root, text="Split Image", command=split_image)
+split_image_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
+
 upload_btn = tk.Button(root, text="Upload Image", command=upload_image)
 upload_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
 
@@ -152,7 +185,7 @@ save_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
 
 # Scale
 scale = tk.Scale(root, from_=10, to=125, orient="horizontal", label="Scale Factor (%)")
-scale.set(100)  #
+scale.set(100)
 scale.pack(side=tk.TOP, anchor=tk.N, pady=10)
 
 # Entry for Red Mask Bounds
@@ -216,3 +249,4 @@ mapping_btn = tk.Button(root, text="Mapping", command=mapping)
 mapping_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
 
 root.mainloop()
+
