@@ -51,7 +51,8 @@ def save_image():
         file_path = filedialog.asksaveasfilename(defaultextension=".png",
                                                  filetypes=[("PNG files", "*.png"), ("JPEG files", "*.jpg")])
         if file_path:
-            globals()['img_filtered'].save(file_path)
+            original_image = globals()['img_filtered'].copy()
+            original_image.save(file_path)
 
 
 def apply_filters(image, lower_red=None, lower_blue=None, kernel_radius_=kernel_radius_default):
@@ -79,7 +80,7 @@ def apply_filters(image, lower_red=None, lower_blue=None, kernel_radius_=kernel_
     mask_final = cv2.morphologyEx(mask_final, cv2.MORPH_OPEN, kernel, iterations=2)
     mask_final = cv2.morphologyEx(mask_final, cv2.MORPH_CLOSE, kernel, iterations=2)
 
-    segment = cv2.bitwise_and(img_median, img_median, mask=mask_final)
+    segment = cv2.bitwise_and(img_array, img_array, mask=mask_final)
     img_segmented = Image.fromarray(segment)
     globals()['img_filtered'] = img_segmented
 
@@ -102,13 +103,13 @@ def apply_changes():
 
 def update_previews():
     if 'img_original' in globals():
-        img_original_thumbnail = globals()['img_original']
+        img_original_thumbnail = globals()['img_original'].copy()
         img_original_thumbnail.thumbnail((600 * globals()["scale_factor"], 600 * globals()["scale_factor"]),
                                          Image.Resampling.LANCZOS)
         update_preview(img_label_original, img_original_thumbnail)
 
     if 'img_filtered' in globals():
-        img_filtered_thumbnail = globals()['img_filtered']
+        img_filtered_thumbnail = globals()['img_filtered'].copy()
         img_filtered_thumbnail.thumbnail((600 * globals()["scale_factor"], 600 * globals()["scale_factor"]),
                                          Image.Resampling.LANCZOS)
         update_preview(img_label_processed, img_filtered_thumbnail)
