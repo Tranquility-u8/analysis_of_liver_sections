@@ -5,6 +5,8 @@ import cv2
 import numpy as np
 import os
 
+import classify
+
 Image.MAX_IMAGE_PIXELS = None
 
 globals()["scale_factor"] = 1
@@ -158,7 +160,7 @@ def split_image():
 
 # Create main window
 root = tk.Tk()
-root.title("Image Processing")
+root.title("Fibrotic Analysis")
 root.geometry('1920x1080')
 
 img_frame = tk.Frame(root)
@@ -173,16 +175,6 @@ img_label_original.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 img_label_processed = tk.Label(img_frame)
 img_label_processed.image = None
 img_label_processed.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
-
-# Buttons
-split_image_btn = tk.Button(root, text="Split Image", command=split_image)
-split_image_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
-
-upload_btn = tk.Button(root, text="Upload Image", command=upload_image)
-upload_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
-
-save_btn = tk.Button(root, text="Save Image", command=save_image)
-save_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
 
 # Scale
 scale = tk.Scale(root, from_=10, to=125, orient="horizontal", label="Scale Factor (%)")
@@ -245,8 +237,24 @@ entry_kernel_radius.pack(side=tk.TOP, anchor=tk.N)
 apply_change_btn = tk.Button(root, text="Apply Change", command=apply_changes)
 apply_change_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
 
+# Split Button
+split_image_btn = tk.Button(root, text="Split", command=split_image, width=8, bg='blue', fg='white')
+split_image_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
+
+# Upload Button
+upload_btn = tk.Button(root, text="Upload", command=upload_image, width=8, bg='blue', fg='white')
+upload_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
+
+# Save Button
+save_btn = tk.Button(root, text="Save", command=save_image, width=8, bg='blue', fg='white')
+save_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
+
 # Mapping Button
-mapping_btn = tk.Button(root, text="Mapping", command=mapping)
+# mapping_btn = tk.Button(root, text="Mapping", command=mapping, width=8, bg='blue', fg='white')
+# mapping_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
+
+# Classify Button
+mapping_btn = tk.Button(root, text="Classify", command=classify.process_image, width=8, bg='blue', fg='white')
 mapping_btn.pack(side=tk.TOP, anchor=tk.N, pady=10)
 
 root.mainloop()
